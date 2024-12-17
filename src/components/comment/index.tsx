@@ -1,7 +1,7 @@
 import React, { useState, useEffect, memo } from "react";
 import "./CommentSection.css";
 import { VscSend } from "react-icons/vsc";
-import { BiLike } from "react-icons/bi";
+import { BiLike, BiSolidLike } from "react-icons/bi";
 import { FaRegComment } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import moment from "moment";
@@ -14,7 +14,15 @@ interface Comment {
   timestamp: Date;
   replies: Comment[];
   likes?: number;
+  avatar: string; // New avatar property for user
 }
+
+// Function to generate a random avatar
+const getRandomAvatar = (name: string) => {
+  const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#F4F400"];
+  const index = name.length % colors.length;
+  return colors[index];
+};
 
 // Memoized CommentItem Component for rendering each comment
 const CommentItem: React.FC<{
@@ -24,30 +32,52 @@ const CommentItem: React.FC<{
   handleReply: (parentId: string, replyText: string) => void;
 }> = memo(({ comment, handleDelete, handleLike, handleReply }) => {
   const [replyInput, setReplyInput] = useState("");
-  const [showReplyInput, setShowReplyInput] = useState(false); // New state to toggle reply input visibility
+  const [showReplyInput, setShowReplyInput] = useState(false);
 
   const handleReplyButtonClick = () => {
-    setShowReplyInput((prev) => !prev); // Toggle reply input visibility
+    setShowReplyInput((prev) => !prev);
+  };
+
+  const handleReplyKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (replyInput.trim()) {
+        handleReply(comment.id, replyInput);
+        setReplyInput(""); // Reset reply input after submitting
+        setShowReplyInput(false); // Hide reply input after submitting
+      }
+    }
   };
 
   return (
     <div className="comment-container">
       <div className="comment-content">
-        <p>
-          <strong className="comment-name">{comment.author}</strong>
-          <span className="timeStamp">
-            · {moment(comment.timestamp).fromNow()}
-          </span>
-        </p>
+        <div className="comment-header">
+          <div
+            className="comment-avatar"
+            style={{ backgroundColor: getRandomAvatar(comment.author) }}
+          >
+            {comment.author[0].toUpperCase()}
+          </div>
+          <p>
+            <strong className="comment-name">{comment.author}</strong>
+            <span className="timeStamp">
+              · {moment(comment.timestamp).fromNow()}
+            </span>
+          </p>
+        </div>
         <p className="comment-text">{comment.text}</p>
         <div className="comment-actions">
           <button
             onClick={() => handleLike(comment.id)}
             className="like-button"
           >
-            <BiLike size={12} />
-            {"  "}
-            {comment.likes || 0}
+            {comment.likes ? (
+              <BiSolidLike size={16} color="#fff" />
+            ) : (
+              <BiLike size={16} />
+            )}
+            {/* {comment.likes ? comment.likes : null} */}
           </button>
           <button onClick={handleReplyButtonClick} className="reply-button">
             <FaRegComment size={12} />
@@ -64,13 +94,12 @@ const CommentItem: React.FC<{
         </div>
       </div>
 
-      {/* Conditionally render reply input based on showReplyInput */}
       {showReplyInput && (
         <div className="reply-input-container">
           <input
-            type="text"
             value={replyInput}
             onChange={(e) => setReplyInput(e.target.value)}
+            onKeyDown={handleReplyKeyDown}
             placeholder="Write a reply..."
             className="reply-input"
           />
@@ -78,8 +107,8 @@ const CommentItem: React.FC<{
             onClick={() => {
               if (replyInput.trim()) {
                 handleReply(comment.id, replyInput);
-                setReplyInput(""); // Reset reply input after submitting
-                setShowReplyInput(false); // Hide reply input after submitting
+                setReplyInput("");
+                setShowReplyInput(false);
               }
             }}
             className="submit-reply-button"
@@ -89,7 +118,6 @@ const CommentItem: React.FC<{
         </div>
       )}
 
-      {/* Render Replies */}
       {comment.replies &&
         comment.replies.map((reply) => (
           <CommentItem
@@ -108,42 +136,44 @@ const CommentSection: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState<string>("");
 
-  // Load comments from localStorage or use initial comments
   useEffect(() => {
-    // Preloaded initial comments
     const initialComments: Comment[] = [
       {
         id: "1",
         text: "This is the first comment!",
         author: "Alice",
-        timestamp: moment().subtract(1, "days").toDate(), // Yesterday
-        likes: 2,
-        replies: [
-          {
-            id: "4",
-            text: "This is the reply to first comment.",
-            author: "Bob",
-            timestamp: moment().subtract(10, "hours").toDate(), // 2 hours ago
-            replies: [],
-            likes: 5,
-          },
-        ],
+        timestamp: moment().subtract(1, "days").toDate(),
+        likes: 1,
+        replies: [],
+        avatar: getRandomAvatar("Alice"),
       },
       {
         id: "2",
         text: "Great work, looking forward to more updates.",
         author: "Bob",
-        timestamp: moment().subtract(12, "hours").toDate(), // 2 hours ago
-        replies: [],
-        likes: 5,
+        timestamp: moment().subtract(12, "hours").toDate(),
+        likes: 1,
+        replies: [
+          {
+            id: "6",
+            text: "Great work, looking forward to more updates.",
+            author: "Bob",
+            timestamp: moment().subtract(10, "hours").toDate(),
+            likes: 0,
+            replies: [],
+            avatar: getRandomAvatar("Bob"),
+          },
+        ],
+        avatar: getRandomAvatar("Bob"),
       },
       {
         id: "3",
-        text: "Amazing, keep it up!",
-        author: "Charlie",
-        timestamp: moment().subtract(2, "hours").toDate(), // 2 hours ago
+        text: "Great work, looking forward to more updates.",
+        author: "John",
+        timestamp: moment().subtract(8, "hours").toDate(),
+        likes: 0,
         replies: [],
-        likes: 1,
+        avatar: getRandomAvatar("Bob"),
       },
     ];
     const savedComments = localStorage.getItem("comments");
@@ -155,14 +185,12 @@ const CommentSection: React.FC = () => {
     }
   }, []);
 
-  // Save comments to localStorage whenever they change
   useEffect(() => {
     if (comments.length > 0) {
       localStorage.setItem("comments", JSON.stringify(comments));
     }
   }, [comments]);
 
-  // Add a new comment
   const handleAddComment = () => {
     if (newComment.trim()) {
       const newCommentObj: Comment = {
@@ -172,13 +200,13 @@ const CommentSection: React.FC = () => {
         timestamp: new Date(),
         replies: [],
         likes: 0,
+        avatar: getRandomAvatar("User"),
       };
       setComments((prev) => [...prev, newCommentObj]);
       setNewComment("");
     }
   };
 
-  // Add a reply to a comment
   const handleAddReply = (parentId: string, replyText: string) => {
     const newReply: Comment = {
       id: Date.now().toString(),
@@ -187,6 +215,7 @@ const CommentSection: React.FC = () => {
       timestamp: new Date(),
       replies: [],
       likes: 0,
+      avatar: getRandomAvatar("User"),
     };
 
     const updateReplies = (comments: Comment[]): Comment[] =>
@@ -200,7 +229,6 @@ const CommentSection: React.FC = () => {
     setComments((prev) => updateReplies(prev));
   };
 
-  // Delete a comment or reply
   const handleDeleteComment = (id: string) => {
     const deleteComment = (comments: Comment[]): Comment[] =>
       comments.filter((comment) => {
@@ -212,12 +240,11 @@ const CommentSection: React.FC = () => {
     setComments((prev) => deleteComment(prev));
   };
 
-  // Like a comment or reply
   const handleLikeComment = (id: string) => {
     const updateLikes = (comments: Comment[]): Comment[] =>
       comments.map((comment) => {
         if (comment.id === id) {
-          return { ...comment, likes: (comment.likes || 0) + 1 };
+          return { ...comment, likes: comment.likes === 0 ? 1 : 0 };
         }
         return { ...comment, replies: updateLikes(comment.replies) };
       });
@@ -230,11 +257,16 @@ const CommentSection: React.FC = () => {
       <h1 className="comment-section-title">Comment Section</h1>
       <div className="new-comment-container">
         <input
-          type="text"
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Write a comment..."
           className="new-comment-input"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              handleAddComment();
+            }
+          }}
         />
         <button onClick={handleAddComment} className="add-comment-button">
           <VscSend color="#fff" size={20} />
