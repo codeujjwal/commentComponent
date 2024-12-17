@@ -6,7 +6,6 @@ import { FaRegComment } from "react-icons/fa";
 import { RiDeleteBin5Line } from "react-icons/ri";
 import moment from "moment";
 
-// TypeScript interface for Comment
 interface Comment {
   id: string;
   text: string;
@@ -14,7 +13,8 @@ interface Comment {
   timestamp: Date;
   replies: Comment[];
   likes?: number;
-  avatar: string; // New avatar property for user
+  likedByYou: boolean;
+  avatar: string;
 }
 
 // Function to generate a random avatar
@@ -43,10 +43,14 @@ const CommentItem: React.FC<{
       e.preventDefault();
       if (replyInput.trim()) {
         handleReply(comment.id, replyInput);
-        setReplyInput(""); // Reset reply input after submitting
-        setShowReplyInput(false); // Hide reply input after submitting
+        setReplyInput("");
+        setShowReplyInput(false);
       }
     }
+  };
+
+  const handleLikeClick = () => {
+    handleLike(comment.id); // Handle like toggle
   };
 
   return (
@@ -62,22 +66,21 @@ const CommentItem: React.FC<{
           <p>
             <strong className="comment-name">{comment.author}</strong>
             <span className="timeStamp">
-              · {moment(comment.timestamp).fromNow()}
+              · {moment(comment.timestamp).fromNow()} ·
             </span>
           </p>
         </div>
         <p className="comment-text">{comment.text}</p>
         <div className="comment-actions">
-          <button
-            onClick={() => handleLike(comment.id)}
-            className="like-button"
-          >
-            {comment.likes ? (
+          <button onClick={handleLikeClick} className="like-button">
+            {comment.likedByYou ? (
               <BiSolidLike size={16} color="#fff" />
             ) : (
               <BiLike size={16} />
             )}
-            {/* {comment.likes ? comment.likes : null} */}
+            {"  "}
+            {comment.likes > 0 && <span>{comment.likes}</span>}{" "}
+            {/* Show likes count */}
           </button>
           <button onClick={handleReplyButtonClick} className="reply-button">
             <FaRegComment size={12} />
@@ -143,8 +146,9 @@ const CommentSection: React.FC = () => {
         text: "This is the first comment!",
         author: "Alice",
         timestamp: moment().subtract(1, "days").toDate(),
-        likes: 1,
+        likes: 10,
         replies: [],
+        likedByYou: true,
         avatar: getRandomAvatar("Alice"),
       },
       {
@@ -152,15 +156,17 @@ const CommentSection: React.FC = () => {
         text: "Great work, looking forward to more updates.",
         author: "Bob",
         timestamp: moment().subtract(12, "hours").toDate(),
-        likes: 1,
+        likes: 11,
+        likedByYou: false,
         replies: [
           {
             id: "6",
             text: "Great work, looking forward to more updates.",
             author: "Bob",
             timestamp: moment().subtract(10, "hours").toDate(),
-            likes: 0,
+            likes: 40,
             replies: [],
+            likedByYou: true,
             avatar: getRandomAvatar("Bob"),
           },
         ],
@@ -171,8 +177,9 @@ const CommentSection: React.FC = () => {
         text: "Great work, looking forward to more updates.",
         author: "John",
         timestamp: moment().subtract(8, "hours").toDate(),
-        likes: 0,
+        likes: 3,
         replies: [],
+        likedByYou: false,
         avatar: getRandomAvatar("Bob"),
       },
     ];
@@ -200,9 +207,10 @@ const CommentSection: React.FC = () => {
         timestamp: new Date(),
         replies: [],
         likes: 0,
+        likedByYou: false,
         avatar: getRandomAvatar("User"),
       };
-      setComments((prev) => [...prev, newCommentObj]);
+      setComments((prev: any) => [...prev, newCommentObj]);
       setNewComment("");
     }
   };
@@ -215,6 +223,7 @@ const CommentSection: React.FC = () => {
       timestamp: new Date(),
       replies: [],
       likes: 0,
+      likedByYou: false,
       avatar: getRandomAvatar("User"),
     };
 
@@ -226,7 +235,7 @@ const CommentSection: React.FC = () => {
         return { ...comment, replies: updateReplies(comment.replies) };
       });
 
-    setComments((prev) => updateReplies(prev));
+    setComments((prev: Comment[]) => updateReplies(prev));
   };
 
   const handleDeleteComment = (id: string) => {
@@ -237,14 +246,18 @@ const CommentSection: React.FC = () => {
         return true;
       });
 
-    setComments((prev) => deleteComment(prev));
+    setComments((prev: Comment[]) => deleteComment(prev));
   };
 
   const handleLikeComment = (id: string) => {
     const updateLikes = (comments: Comment[]): Comment[] =>
       comments.map((comment) => {
         if (comment.id === id) {
-          return { ...comment, likes: comment.likes === 0 ? 1 : 0 };
+          const newLikedByYou = !comment.likedByYou;
+          const likes = comment.likes || 0;
+          const newLikes = newLikedByYou ? likes + 1 : likes - 1;
+
+          return { ...comment, likedByYou: newLikedByYou, likes: newLikes };
         }
         return { ...comment, replies: updateLikes(comment.replies) };
       });
@@ -258,10 +271,16 @@ const CommentSection: React.FC = () => {
       <div className="new-comment-container">
         <input
           value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
+          onChange={(e: { target: { value: any } }) =>
+            setNewComment(e.target.value)
+          }
           placeholder="Write a comment..."
           className="new-comment-input"
-          onKeyDown={(e) => {
+          onKeyDown={(e: {
+            key: string;
+            shiftKey: any;
+            preventDefault: () => void;
+          }) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
               handleAddComment();
@@ -273,7 +292,7 @@ const CommentSection: React.FC = () => {
         </button>
       </div>
       <div className="comments-list">
-        {comments.map((comment) => (
+        {comments.map((comment: { id: any }) => (
           <CommentItem
             key={comment.id}
             comment={comment}
