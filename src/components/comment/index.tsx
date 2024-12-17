@@ -108,45 +108,44 @@ const CommentSection: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState<string>("");
 
-  // Preloaded initial comments
-  const initialComments: Comment[] = [
-    {
-      id: "1",
-      text: "This is the first comment!",
-      author: "Alice",
-      timestamp: moment().subtract(1, "days").toDate(), // Yesterday
-      likes: 2,
-      replies: [
-        {
-          id: "4",
-          text: "This is the reply to first comment.",
-          author: "Bob",
-          timestamp: moment().subtract(10, "hours").toDate(), // 2 hours ago
-          replies: [],
-          likes: 5,
-        },
-      ],
-    },
-    {
-      id: "2",
-      text: "Great work, looking forward to more updates.",
-      author: "Bob",
-      timestamp: moment().subtract(12, "hours").toDate(), // 2 hours ago
-      replies: [],
-      likes: 5,
-    },
-    {
-      id: "3",
-      text: "Amazing, keep it up!",
-      author: "Charlie",
-      timestamp: moment().subtract(2, "hours").toDate(), // 2 hours ago
-      replies: [],
-      likes: 1,
-    },
-  ];
-
   // Load comments from localStorage or use initial comments
   useEffect(() => {
+    // Preloaded initial comments
+    const initialComments: Comment[] = [
+      {
+        id: "1",
+        text: "This is the first comment!",
+        author: "Alice",
+        timestamp: moment().subtract(1, "days").toDate(), // Yesterday
+        likes: 2,
+        replies: [
+          {
+            id: "4",
+            text: "This is the reply to first comment.",
+            author: "Bob",
+            timestamp: moment().subtract(10, "hours").toDate(), // 2 hours ago
+            replies: [],
+            likes: 5,
+          },
+        ],
+      },
+      {
+        id: "2",
+        text: "Great work, looking forward to more updates.",
+        author: "Bob",
+        timestamp: moment().subtract(12, "hours").toDate(), // 2 hours ago
+        replies: [],
+        likes: 5,
+      },
+      {
+        id: "3",
+        text: "Amazing, keep it up!",
+        author: "Charlie",
+        timestamp: moment().subtract(2, "hours").toDate(), // 2 hours ago
+        replies: [],
+        likes: 1,
+      },
+    ];
     const savedComments = localStorage.getItem("comments");
     if (savedComments) {
       setComments(JSON.parse(savedComments));
