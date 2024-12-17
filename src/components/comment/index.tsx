@@ -17,14 +17,12 @@ interface Comment {
   avatar: string;
 }
 
-// Function to generate a random avatar
 const getRandomAvatar = (name: string) => {
   const colors = ["#FF5733", "#33FF57", "#3357FF", "#FF33A1", "#F4F400"];
   const index = name.length % colors.length;
   return colors[index];
 };
 
-// Memoized CommentItem Component for rendering each comment
 const CommentItem: React.FC<{
   comment: Comment;
   handleDelete: (id: string) => void;
@@ -33,6 +31,8 @@ const CommentItem: React.FC<{
 }> = memo(({ comment, handleDelete, handleLike, handleReply }) => {
   const [replyInput, setReplyInput] = useState("");
   const [showReplyInput, setShowReplyInput] = useState(false);
+
+  const replyInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleReplyButtonClick = () => {
     setShowReplyInput((prev) => !prev);
@@ -50,8 +50,14 @@ const CommentItem: React.FC<{
   };
 
   const handleLikeClick = () => {
-    handleLike(comment.id); // Handle like toggle
+    handleLike(comment.id);
   };
+
+  useEffect(() => {
+    if (showReplyInput && replyInputRef.current) {
+      replyInputRef.current.focus();
+    }
+  }, [showReplyInput]);
 
   return (
     <div className="comment-container">
@@ -86,20 +92,23 @@ const CommentItem: React.FC<{
             <FaRegComment size={12} />
             {"  "} Reply
           </button>
-          <button
-            onClick={() => handleDelete(comment.id)}
-            className="delete-button"
-          >
-            <RiDeleteBin5Line size={12} />
-            {"  "}
-            Delete
-          </button>
+          {comment.author === "User" && (
+            <button
+              onClick={() => handleDelete(comment.id)}
+              className="delete-button"
+            >
+              <RiDeleteBin5Line size={12} />
+              {"  "}
+              Delete
+            </button>
+          )}
         </div>
       </div>
 
       {showReplyInput && (
         <div className="reply-input-container">
           <input
+            ref={replyInputRef}
             value={replyInput}
             onChange={(e) => setReplyInput(e.target.value)}
             onKeyDown={handleReplyKeyDown}
@@ -147,7 +156,18 @@ const CommentSection: React.FC = () => {
         author: "Alice",
         timestamp: moment().subtract(1, "days").toDate(),
         likes: 10,
-        replies: [],
+        replies: [
+          {
+            id: "5",
+            text: "Great work, looking forward to more updates.",
+            author: "User",
+            timestamp: moment().subtract(4, "hours").toDate(),
+            likes: 4,
+            replies: [],
+            likedByYou: true,
+            avatar: getRandomAvatar("Bob"),
+          },
+        ],
         likedByYou: true,
         avatar: getRandomAvatar("Alice"),
       },
@@ -158,18 +178,7 @@ const CommentSection: React.FC = () => {
         timestamp: moment().subtract(12, "hours").toDate(),
         likes: 11,
         likedByYou: false,
-        replies: [
-          {
-            id: "6",
-            text: "Great work, looking forward to more updates.",
-            author: "Bob",
-            timestamp: moment().subtract(10, "hours").toDate(),
-            likes: 40,
-            replies: [],
-            likedByYou: true,
-            avatar: getRandomAvatar("Bob"),
-          },
-        ],
+        replies: [],
         avatar: getRandomAvatar("Bob"),
       },
       {
@@ -178,7 +187,18 @@ const CommentSection: React.FC = () => {
         author: "John",
         timestamp: moment().subtract(8, "hours").toDate(),
         likes: 3,
-        replies: [],
+        replies: [
+          {
+            id: "4",
+            text: "Great work, looking forward to more updates.",
+            author: "User",
+            timestamp: moment().subtract(4, "hours").toDate(),
+            likes: 6,
+            replies: [],
+            likedByYou: true,
+            avatar: getRandomAvatar("Bob"),
+          },
+        ],
         likedByYou: false,
         avatar: getRandomAvatar("Bob"),
       },
